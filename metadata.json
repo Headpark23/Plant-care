@@ -1,0 +1,6 @@
+{
+  "name": "FloraCare",
+  "description": "Track house plant health, identify species with Gemini, set watering schedules, and monitor area sunlight exposure.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

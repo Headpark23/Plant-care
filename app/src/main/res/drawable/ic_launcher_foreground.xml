@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Elegant organic stem -->
+    <path
+        android:fillColor="#394A28"
+        android:pathData="M54,54 L54,88 Q54,94 48,94"
+        android:strokeColor="#394A28"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round" />
+    
+    <!-- Leaf 1 (Left side) -->
+    <path
+        android:fillColor="#394A28"
+        android:pathData="M54,72 Q42,72 38,64 Q46,58 54,72" />
+        
+    <!-- Leaf 2 (Right side) -->
+    <path
+        android:fillColor="#394A28"
+        android:pathData="M54,78 Q66,78 68,70 Q60,64 54,78" />
+
+    <!-- Bloom petals (Terracotta Red) -->
+    <!-- Top Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C54,42 45,24 54,24 C63,24 54,42 54,54" />
+    <!-- Top-Right Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C61,46 73,33 78,40 C83,47 68,50 54,54" />
+    <!-- Right Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C64,54 82,45 82,54 C82,63 64,54 54,54" />
+    <!-- Bottom-Right Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C61,61 73,73 68,78 C63,83 58,67 54,54" />
+    <!-- Bottom Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C54,64 63,82 54,82 C45,82 54,64 54,54" />
+    <!-- Bottom-Left Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C47,61 35,73 30,68 C25,63 41,58 54,54" />
+    <!-- Left Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C44,54 26,63 26,54 C26,45 44,54 54,54" />
+    <!-- Top-Left Petal -->
+    <path
+        android:fillColor="#E35335"
+        android:pathData="M54,54 C47,46 35,33 40,28 C45,23 49,39 54,54" />
+
+    <!-- Flower Central Disc (Golden Amber) -->
+    <path
+        android:fillColor="#FBC02D"
+        android:pathData="M54,54m-9,0a9,9 0,1,1 18,0a9,9 0,1,1 -18,0" />
+        
+    <!-- Tiny inner core of the flower -->
+    <path
+        android:fillColor="#FFA000"
+        android:pathData="M54,54m-4.5,0a4.5,4.5 0,1,1 9,0a4.5,4.5 0,1,1 -9,0" />
+</vector>
