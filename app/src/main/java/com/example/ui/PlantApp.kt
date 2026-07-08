@@ -1,12 +1,14 @@
 package com.example.ui
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -174,6 +176,7 @@ fun PlantApp(viewModel: PlantViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val currentScreenState = remember { mutableStateOf<Screen>(Screen.Dashboard) }
     val snackbarHostState = remember { SnackbarHostState() }
+    var selectedTab by remember { mutableStateOf(0) }
 
     // Register active screens back navigation handler
     val navigateBack = {
@@ -188,7 +191,6 @@ fun PlantApp(viewModel: PlantViewModel, modifier: Modifier = Modifier) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (currentScreenState.value is Screen.Dashboard) {
-                var selectedTab by remember { mutableStateOf(0) }
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     tonalElevation = 4.dp
@@ -222,21 +224,28 @@ fun PlantApp(viewModel: PlantViewModel, modifier: Modifier = Modifier) {
                         modifier = Modifier.testTag("nav_holiday")
                     )
                 }
-                
-                // Show nested views based on bottom bar selection
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (currentScreenState.value is Screen.Dashboard) {
                 Crossfade(targetState = selectedTab, label = "tab_fade") { tab ->
                     when (tab) {
-                        0 -> DashboardScreen(viewModel, onNavigate = { currentScreenState.value = it })
+                        0 -> DashboardScreen(
+                            viewModel = viewModel,
+                            onNavigate = { currentScreenState.value = it },
+                            onTabSelect = { selectedTab = it }
+                        )
                         1 -> LocationsScreen(viewModel, onNavigate = { currentScreenState.value = it })
                         2 -> CareFeedScreen(viewModel, onNavigate = { currentScreenState.value = it })
                         3 -> HolidayCareScreen(viewModel = viewModel)
                     }
                 }
-            }
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding)) {
-            if (currentScreenState.value !is Screen.Dashboard) {
+            } else {
                 when (val screen = currentScreenState.value) {
                     is Screen.PlantDetail -> PlantDetailScreen(plantId = screen.plantId, viewModel = viewModel, onBack = navigateBack)
                     is Screen.AreaDetail -> AreaDetailScreen(areaId = screen.areaId, viewModel = viewModel, onBack = navigateBack)
@@ -248,10 +257,22 @@ fun PlantApp(viewModel: PlantViewModel, modifier: Modifier = Modifier) {
     }
 }
 
+// --- Dashboard Feature Item Helper ---
+data class FeatureItem(
+    val name: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: androidx.compose.ui.graphics.Color,
+    val onClick: () -> Unit
+)
+
 // --- SUB-SCREEN 1: MY GARDEN / PLANTS DASHBOARD ---
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DashboardScreen(viewModel: PlantViewModel, onNavigate: (Screen) -> Unit) {
+fun DashboardScreen(
+    viewModel: PlantViewModel,
+    onNavigate: (Screen) -> Unit,
+    onTabSelect: (Int) -> Unit
+) {
     val plants by viewModel.plants.collectAsStateWithLifecycle()
     val careAlerts by viewModel.careAlerts.collectAsStateWithLifecycle()
     val areas by viewModel.areas.collectAsStateWithLifecycle()
@@ -273,6 +294,15 @@ fun DashboardScreen(viewModel: PlantViewModel, onNavigate: (Screen) -> Unit) {
         }
         matchesSearch && matchesFilter
     }
+
+    val features = listOf(
+        FeatureItem("Add Plant", Icons.Filled.Add, Color(0xFF4CAF50), { onNavigate(Screen.AddPlant) }),
+        FeatureItem("Plant ID", Icons.Filled.PhotoCamera, Color(0xFF009688), { onNavigate(Screen.AddPlant) }),
+        FeatureItem("Water Schedule", Icons.Filled.WaterDrop, Color(0xFF2196F3), { onTabSelect(2) }),
+        FeatureItem("Feed Schedule", Icons.Filled.Eco, Color(0xFFFFB300), { onTabSelect(2) }),
+        FeatureItem("Your Plants", Icons.Filled.LocalFlorist, Color(0xFF42A5F5), { selectedFilter = "All" }),
+        FeatureItem("Holiday Scheduler", Icons.Filled.Luggage, Color(0xFF9C27B0), { onTabSelect(3) })
+    )
 
     Scaffold(
         floatingActionButton = {
@@ -377,6 +407,73 @@ fun DashboardScreen(viewModel: PlantViewModel, onNavigate: (Screen) -> Unit) {
                 }
             }
 
+            // Quick Access Feature Buttons Grid
+            Text(
+                text = "Dashboard Control Panel",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                features.chunked(2).forEach { rowFeatures ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        rowFeatures.forEach { feature ->
+                            Card(
+                                onClick = feature.onClick,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(85.dp)
+                                    .testTag("feature_btn_${feature.name.lowercase().replace(" ", "_")}"),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = feature.color.copy(alpha = 0.08f)
+                                ),
+                                border = BorderStroke(1.dp, feature.color.copy(alpha = 0.2f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(feature.color.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = feature.icon,
+                                            contentDescription = feature.name,
+                                            tint = feature.color,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
+                                    Text(
+                                        text = feature.name,
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Search Bar
             OutlinedTextField(
                 value = searchQuery,
@@ -417,7 +514,7 @@ fun DashboardScreen(viewModel: PlantViewModel, onNavigate: (Screen) -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Plants List Grid
+            // Plants List Grid (Custom implementation using Row/Column chunking to avoid nested-scroll crashes)
             if (filteredPlants.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -447,23 +544,31 @@ fun DashboardScreen(viewModel: PlantViewModel, onNavigate: (Screen) -> Unit) {
                     }
                 }
             } else {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 1200.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    userScrollEnabled = false
+                val chunkedPlants = filteredPlants.chunked(2)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(filteredPlants, key = { it.id }) { plant ->
-                        val areaName = areas.find { it.id == plant.areaId }?.name ?: "No Location"
-                        PlantGridCard(
-                            plant = plant,
-                            areaName = areaName,
-                            viewModel = viewModel,
-                            onClick = { onNavigate(Screen.PlantDetail(plant.id)) }
-                        )
+                    chunkedPlants.forEach { pair ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            pair.forEach { plant ->
+                                Box(modifier = Modifier.weight(1f)) {
+                                    val areaName = areas.find { it.id == plant.areaId }?.name ?: "No Location"
+                                    PlantGridCard(
+                                        plant = plant,
+                                        areaName = areaName,
+                                        viewModel = viewModel,
+                                        onClick = { onNavigate(Screen.PlantDetail(plant.id)) }
+                                    )
+                                }
+                            }
+                            if (pair.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
                     }
                 }
             }
@@ -1633,6 +1738,17 @@ fun AddPlantScreen(viewModel: PlantViewModel, onBack: () -> Unit) {
         }
     }
 
+    // Camera Permission launcher
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(null)
+        } else {
+            Toast.makeText(context, "Camera permission is required to identify plants using camera", Toast.LENGTH_LONG).show()
+        }
+    }
+
     // Gallery Result launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -1727,7 +1843,17 @@ fun AddPlantScreen(viewModel: PlantViewModel, onBack: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Button(
-                            onClick = { cameraLauncher.launch(null) },
+                            onClick = {
+                                val permissionCheck = ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.CAMERA
+                                )
+                                if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                                    cameraLauncher.launch(null)
+                                } else {
+                                    cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                                }
+                            },
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("camera_scan_button"),
@@ -1798,13 +1924,7 @@ fun AddPlantScreen(viewModel: PlantViewModel, onBack: () -> Unit) {
                                         }
                                         viewModel.clearAiScan()
                                         // Set result
-                                        (viewModel as Object).let {
-                                            // Put Success
-                                            val field = viewModel.javaClass.getDeclaredField("_aiScanState")
-                                            field.isAccessible = true
-                                            val stateFlow = field.get(viewModel) as MutableStateFlow<AiScanState>
-                                            stateFlow.value = AiScanState.Success(mockResult)
-                                        }
+                                        viewModel.setAiScanState(AiScanState.Success(mockResult))
                                     }
                                     .padding(vertical = 10.dp, horizontal = 4.dp),
                                 contentAlignment = Alignment.Center

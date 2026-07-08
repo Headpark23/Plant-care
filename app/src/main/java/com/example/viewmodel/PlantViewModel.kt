@@ -256,6 +256,10 @@ class PlantViewModel(private val repository: PlantRepository) : ViewModel() {
 
     // --- Gemini AI Analysis ---
 
+    fun setAiScanState(state: AiScanState) {
+        _aiScanState.value = state
+    }
+
     fun clearAiScan() {
         _aiScanState.value = AiScanState.Idle
     }
